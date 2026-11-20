@@ -94,7 +94,25 @@ $('reset-camera').addEventListener('click',fitCamera);
 $('quote').addEventListener('click',()=>{const c=config();const subject=encodeURIComponent('Quotation request — 3D curing oven configuration');const body=encodeURIComponent(`Hello,\n\nPlease quote the following configuration:\n\nMachine: ${c.machine}\nInternal width: ${c.internalWidthMm} mm\nInternal depth: ${c.internalDepthMm} mm\nInternal height: ${c.internalHeightMm} mm\nHeating: ${c.heating}\nFinish: ${c.finish}\nDoors: ${c.doors}\n\nPlease advise technical feasibility, pricing and lead time.\n\nName:\nCompany:\nCountry:\nPhone:\n`);window.location.href=`mailto:?subject=${subject}&body=${body}`;});
 $('download').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({...config(),status:'Preliminary request — engineering verification required'},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='powceq-oven-configuration.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 const observer=new ResizeObserver(()=>{const width=holder.clientWidth,height=holder.clientHeight;if(width&&height){camera.aspect=width/height;camera.updateProjectionMatrix();renderer.setSize(width,height,false);fitCamera();}});observer.observe(holder);
-rebuild();let frame;function animate(){frame=requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);}animate();
-window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);observer.disconnect();controls.dispose();renderer.dispose();},{once:true});
+rebuild();
+fitCamera();
+
+let frame;
+
+function animate() {
+  frame = requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('pagehide', () => {
+  cancelAnimationFrame(frame);
+  observer.disconnect();
+  controls.dispose();
+  renderer.dispose();
+}, { once: true });
+
 }
 </script>
