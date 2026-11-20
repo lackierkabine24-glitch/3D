@@ -60,6 +60,34 @@ function rebuild(){
  fitCamera();
  $('summary-text').textContent=`${c.internalWidthMm} × ${c.internalDepthMm} × ${c.internalHeightMm} mm (W × D × H) · ${c.heating} heating · ${c.finish} finish`;
 }
+
+function resizeViewer() {
+  const width = holder.clientWidth;
+  const height = holder.clientHeight;
+
+  if (!width || !height) return;
+
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height, false);
+}
+
+const observer = new ResizeObserver(resizeViewer);
+observer.observe(holder);
+
+rebuild();
+resizeViewer();
+fitCamera();
+
+let frame;
+function animate() {
+  frame = requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+
 for(const id of ['width','depth','height','heating','color'])$(id).addEventListener('input',rebuild);
 $('toggle-doors').addEventListener('click',()=>{doorsOpen=!doorsOpen;$('toggle-doors').textContent=doorsOpen?'Close doors':'Open doors';rebuild();});
 // Frame the complete oven in the center of the viewer, including on iPad/mobile.
