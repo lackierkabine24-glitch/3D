@@ -90,19 +90,27 @@ function fitCamera(){
  controls.update();
  controls.enableDamping=damping;
 
-console.log("CAMERA DEBUG", {
-  holderWidth: holder.clientWidth,
-  holderHeight: holder.clientHeight,
-  canvasWidth: renderer.domElement.clientWidth,
-  canvasHeight: renderer.domElement.clientHeight,
-  cameraAspect: camera.aspect,
-  ovenCenter: sphere.center.toArray(),
-  ovenRadius: sphere.radius,
-  cameraPosition: camera.position.toArray(),
-  cameraTarget: controls.target.toArray(),
-  distance: distance
-});
+let debug = document.getElementById('camera-debug');
 
+if (!debug) {
+  debug = document.createElement('div');
+  debug.id = 'camera-debug';
+  debug.style.cssText =
+    'position:absolute;top:60px;left:10px;' +
+    'z-index:9999;background:#111;color:#0f0;' +
+    'padding:10px;font:12px monospace;' +
+    'max-width:90%;white-space:pre-wrap;';
+  holder.parentElement.appendChild(debug);
+}
+
+debug.textContent =
+  'CAMERA TEST V3\n' +
+  'Viewer: ' + holder.clientWidth + ' x ' + holder.clientHeight + '\n' +
+  'Canvas: ' + renderer.domElement.clientWidth +
+  ' x ' + renderer.domElement.clientHeight + '\n' +
+  'Center: ' + sphere.center.toArray().map(n => n.toFixed(2)).join(', ') + '\n' +
+  'Camera: ' + camera.position.toArray().map(n => n.toFixed(2)).join(', ') + '\n' +
+  'Distance: ' + distance.toFixed(2);
 
 }
 $('reset-camera').addEventListener('click',fitCamera);
