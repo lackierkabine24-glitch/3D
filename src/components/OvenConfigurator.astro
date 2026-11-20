@@ -64,23 +64,31 @@ for(const id of ['width','depth','height','heating','color'])$(id).addEventListe
 $('toggle-doors').addEventListener('click',()=>{doorsOpen=!doorsOpen;$('toggle-doors').textContent=doorsOpen?'Close doors':'Open doors';rebuild();});
 // Frame the complete oven in the center of the viewer, including on iPad/mobile.
 function fitCamera(){
+ // Fit a bounding sphere: works regardless of oven orientation and aspect ratio.
+ group.updateWorldMatrix(true,true);
  const bounds=new THREE.Box3().setFromObject(group);
  if(bounds.isEmpty())return;
- const center=bounds.getCenter(new THREE.Vector3());
- const size=bounds.getSize(new THREE.Vector3());
- const width=Math.max(holder.clientWidth,1),height=Math.max(holder.clientHeight,1);
- const aspect=width/height;
- camera.aspect=aspect;
- camera.updateProjectionMatrix();
+ const sphere=bounds.getBoundingSphere(new THREE.Sphere());
+ const width=holder.clientWidth||600, height=holder.clientHeight||500;
+ camera.aspect=width/height;
  const vFov=THREE.MathUtils.degToRad(camera.fov);
- const hFov=2*Math.atan(Math.tan(vFov/2)*aspect);
- const distance=Math.max(size.y/(2*Math.tan(vFov/2)),size.x/(2*Math.tan(hFov/2)),size.z/(2*Math.tan(hFov/2)))*1.85;
- const direction=new THREE.Vector3(1,.65,1).normalize();
- camera.position.copy(center).addScaledVector(direction,Math.max(distance,3));
- controls.target.copy(center);
- camera.near=.1;camera.far=Math.max(100,distance*10);camera.updateProjectionMatrix();
- controls.maxDistance=Math.max(25,distance*3);
+ const hFov=2*Math.atan(Math.tan(vFov/2)*camera.aspect);
+ const limitingHalfFov=Math.min(vFov,hFov)/2;
+ const distance=Math.max(5,sphere.radius/Math.sin(limitingHalfFov)*1.35);
+ const direction=new THREE.Vector3(1,0.55,1).normalize();
+ // Clear OrbitControls damping so old drag motion cannot shift the reset view.
+ const damping=controls.enableDamping;
+ controls.enableDamping=false;
+ controls.target.copy(sphere.center);
+ camera.position.copy(sphere.center).addScaledVector(direction,distance);
+ camera.near=0.1;
+ camera.far=Math.max(150,distance*8);
+ camera.updateProjectionMatrix();
+ camera.lookAt(sphere.center);
+ controls.minDistance=2;
+ controls.maxDistance=Math.max(40,distance*3);
  controls.update();
+ controls.enableDamping=damping;
 }
 $('reset-camera').addEventListener('click',fitCamera);
 $('quote').addEventListener('click',()=>{const c=config();const subject=encodeURIComponent('Quotation request — 3D curing oven configuration');const body=encodeURIComponent(`Hello,\n\nPlease quote the following configuration:\n\nMachine: ${c.machine}\nInternal width: ${c.internalWidthMm} mm\nInternal depth: ${c.internalDepthMm} mm\nInternal height: ${c.internalHeightMm} mm\nHeating: ${c.heating}\nFinish: ${c.finish}\nDoors: ${c.doors}\n\nPlease advise technical feasibility, pricing and lead time.\n\nName:\nCompany:\nCountry:\nPhone:\n`);window.location.href=`mailto:?subject=${subject}&body=${body}`;});
