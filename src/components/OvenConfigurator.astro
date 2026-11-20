@@ -16,11 +16,37 @@ const renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixe
 scene.add(new THREE.HemisphereLight(0xffffff,0x8ba0b4,2.2));const light=new THREE.DirectionalLight(0xffffff,2.4);light.position.set(5,9,7);light.castShadow=true;scene.add(light);
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(100,100),new THREE.MeshStandardMaterial({color:0xdce5eb}));ground.rotation.x=-Math.PI/2;ground.position.y=-.03;ground.receiveShadow=true;scene.add(ground);
 const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.target.set(0,1.1,0);
+function centerCamera() {
+  const box = new THREE.Box3().setFromObject(oven);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  const radius = size.length() / 2;
+  const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+  const horizontalFov = 2 * Math.atan(
+    Math.tan(verticalFov / 2) * camera.aspect
+  );
+
+  const distance =
+    radius / Math.sin(Math.min(verticalFov, horizontalFov) / 2) * 1.25;
+
+  controls.target.copy(center);
+  camera.position.copy(
+    center.clone().add(
+      new THREE.Vector3(1, 0.65, 1).normalize().multiplyScalar(distance)
+    )
+  );
+
+  camera.near = Math.max(0.01, distance / 100);
+  camera.far = Math.max(100, distance * 10);
+  camera.updateProjectionMatrix();
+  controls.update();
+}
 let oven=new THREE.Group();scene.add(oven);let doors:THREE.Group[]=[];let isOpen=false;
 const material=(color:number,metalness=.35)=>new THREE.MeshStandardMaterial({color,metalness,roughness:.45});
 function panel(parent:THREE.Object3D,w:number,h:number,d:number,x:number,y:number,z:number,mat:THREE.Material){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
 function rebuild(){scene.remove(oven);oven=new THREE.Group();scene.add(oven);doors=[];const w=+(el('width') as HTMLInputElement).value,h=+(el('height') as HTMLInputElement).value,d=+(el('depth') as HTMLInputElement).value;const finish=(el('finish') as HTMLSelectElement).value;const base=material(finish==='blue'?0x216ba4:finish==='dark'?0x424b57:0xb9c3cd);const trim=material(0x34495a);const edge=.10;panel(oven,w,h,edge,0,h/2,-d/2,base);panel(oven,edge,h,d,-w/2,h/2,0,base);panel(oven,edge,h,d,w/2,h/2,0,base);panel(oven,w,edge,d,0,h,0,base);panel(oven,w,edge,d,0,edge/2,0,trim);panel(oven,w+.07,.09,.09,0,h-.07,d/2+.04,trim);const dw=w/2-.025;for(const side of [-1,1]){const hingeX=side*w/2;const doorGroup=new THREE.Group();doorGroup.position.set(hingeX,0,d/2);const centerX=-side*dw/2;panel(doorGroup,dw-.025,h-.16,.07,centerX,h/2,0,base);panel(doorGroup,.035,.35,.10,-side*(dw-.14),h/2,.09,trim);oven.add(doorGroup);doors.push(doorGroup);}const label=material(0xf5ad31,.05);panel(oven,.55,.12,.015,0,h-.3,d/2+.09,label);isOpen=false;el('door').textContent='Open doors';for(const k of ['width','height','depth'])el(k+'Value').textContent=(el(k) as HTMLInputElement).value+' m';}
-function animate(){requestAnimationFrame(animate);doors.forEach((door,i)=>{const target=isOpen?(i===0?Math.PI*.68:-Math.PI*.68):0;door.rotation.y+=(target-door.rotation.y)*.12;});controls.update();renderer.render(scene,camera);}function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(canvas);resize();rebuild();animate();
+function animate(){requestAnimationFrame(animate);doors.forEach((door,i)=>{const target=isOpen?(i===0?Math.PI*.68:-Math.PI*.68):0;door.rotation.y+=(target-door.rotation.y)*.12;});controls.update();renderer.render(scene,camera);}function resize(){const w=canvas.clientWidth,h=canvas.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}new ResizeObserver(resize).observe(canvas);resize();rebuild();centerCamera();animate();
 for(const id of ['width','height','depth','finish'])el(id).addEventListener('input',rebuild);
 el('door').addEventListener('click',()=>{isOpen=!isOpen;el('door').textContent=isOpen?'Close doors':'Open doors';});
 function config(){return {width_m:Number((el('width') as HTMLInputElement).value),height_m:Number((el('height') as HTMLInputElement).value),depth_m:Number((el('depth') as HTMLInputElement).value),heating:(el('heating') as HTMLSelectElement).value,finish:(el('finish') as HTMLSelectElement).selectedOptions[0].text};}
