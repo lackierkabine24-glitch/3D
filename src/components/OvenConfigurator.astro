@@ -89,6 +89,21 @@ function fitCamera(){
  controls.maxDistance=Math.max(40,distance*3);
  controls.update();
  controls.enableDamping=damping;
+
+console.log("CAMERA DEBUG", {
+  holderWidth: holder.clientWidth,
+  holderHeight: holder.clientHeight,
+  canvasWidth: renderer.domElement.clientWidth,
+  canvasHeight: renderer.domElement.clientHeight,
+  cameraAspect: camera.aspect,
+  ovenCenter: sphere.center.toArray(),
+  ovenRadius: sphere.radius,
+  cameraPosition: camera.position.toArray(),
+  cameraTarget: controls.target.toArray(),
+  distance: distance
+});
+
+
 }
 $('reset-camera').addEventListener('click',fitCamera);
 $('quote').addEventListener('click',()=>{const c=config();const subject=encodeURIComponent('Quotation request — 3D curing oven configuration');const body=encodeURIComponent(`Hello,\n\nPlease quote the following configuration:\n\nMachine: ${c.machine}\nInternal width: ${c.internalWidthMm} mm\nInternal depth: ${c.internalDepthMm} mm\nInternal height: ${c.internalHeightMm} mm\nHeating: ${c.heating}\nFinish: ${c.finish}\nDoors: ${c.doors}\n\nPlease advise technical feasibility, pricing and lead time.\n\nName:\nCompany:\nCountry:\nPhone:\n`);window.location.href=`mailto:?subject=${subject}&body=${body}`;});
